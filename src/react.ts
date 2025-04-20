@@ -23,6 +23,12 @@ export function useStore<S extends ReadonlyStoreApi<unknown>, U>(
   selector: (state: ExtractState<S>) => U,
 ): U
 
+// export function useSyncExternalStore<Snapshot>(
+//   subscribe: (onStoreChange: () => void) => () => void,
+//   getSnapshot: () => Snapshot,
+//   getServerSnapshot?: () => Snapshot,
+// ): Snapshot;
+// store의 변화 감지 담당
 export function useStore<TState, StateSlice>(
   api: ReadonlyStoreApi<TState>,
   selector: (state: TState) => StateSlice = identity as any,
@@ -51,6 +57,11 @@ type Create = {
 }
 
 const createImpl = <T>(createState: StateCreator<T, [], []>) => {
+  // createStore을 다시 호출하고 있음
+  // createStore가 상태 생성 및 변경을 담당
+  // { setState, getState, getInitialState, subscribe }를 리턴함
+  // state, listeners에 간접적으로 접근 가능
+  // 오직 반환된 API 메서드를 통해서만 상태에 접근하고 조작 >> 상태 변경이 항상 제어된 방식으로만 이루어지도록 보장
   const api = createStore(createState)
 
   const useBoundStore: any = (selector?: any) => useStore(api, selector)
@@ -62,3 +73,11 @@ const createImpl = <T>(createState: StateCreator<T, [], []>) => {
 
 export const create = (<T>(createState: StateCreator<T, [], []> | undefined) =>
   createState ? createImpl(createState) : createImpl) as Create
+
+// 스토어 생성 예시 (create 함수의 매개변수로 전달)
+// const usePersonStore = create<State & Action>((set) => ({
+//   firstName: '',
+//   lastName: '',
+//   updateFirstName: (firstName) => set(() => ({ firstName: firstName })),
+//   updateLastName: (lastName) => set(() => ({ lastName: lastName })),
+// }))
